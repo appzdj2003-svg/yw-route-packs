@@ -74,6 +74,7 @@ class H(osmium.SimpleHandler):
             if not n.location.valid(): continue
             refs.append(n.ref); pts.append((round(n.location.lat*1e6), round(n.location.lon*1e6)))
         if len(refs) < 2: return
+        if BBOX and not any(BBOX[0] <= a <= BBOX[2] and BBOX[1] <= b <= BBOX[3] for a, b in pts): return
         for i, r in enumerate(refs):
             s.use[r] = s.use.get(r, 0) + (2 if i in (0, len(refs)-1) else 1)
         s.ways.append((w.id, refs, pts, oneway, sp, cls, link, rb, tagged, (name, ref, dest), (lf, lb)))
@@ -89,6 +90,11 @@ class H(osmium.SimpleHandler):
         via = [m for m in r.members if m.role == "via"]
         if len(fr) != 1 or len(to) != 1 or len(via) != 1 or via[0].type != "n": s.rel.append(None); return
         s.rel.append((fr[0], via[0].ref, to[0], kind))
+
+# Optional split of a large state: YWRP_BBOX="south,west,north,east" keeps whole ways with any node inside,
+# so two halves share the nodes along the split line and join like neighbouring states.
+import os
+BBOX = [round(float(x)*1e6) for x in os.environ["YWRP_BBOX"].split(",")] if os.environ.get("YWRP_BBOX") else None
 
 def hav(a, b):
     la1, lo1, la2, lo2 = a[0]/1e6, a[1]/1e6, b[0]/1e6, b[1]/1e6
