@@ -33,3 +33,8 @@ Cross-state routes: the app loads neighbouring packs together and joins them on 
 border (Geofabrik extracts keep border-crossing ways whole). Checksums in `SHA256SUMS`.
 
 Data © OpenStreetMap contributors, ODbL 1.0. See LICENSE.
+
+## v3 packs (2026-10-28)
+YWRP format 3 adds a per-edge toll flag (OSM `toll=yes`, `barrier=toll_booth`) used by the app's Avoid tolls option. Releases `<id>-v3` for sc nc ga ct ri ma nyd nyu nj paw pae oh wv md de. SHA-256 (decompressed) in SHA256SUMS. v2 packs still work without toll data.
+
+Data © OpenStreetMap contributors, ODbL 1.0.

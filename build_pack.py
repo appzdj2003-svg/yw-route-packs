@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Build a compact driving-route pack (format YWRP v2) from an OpenStreetMap .osm.pbf extract.
+"""Build a compact driving-route pack (format YWRP v3) from an OpenStreetMap .osm.pbf extract.
 
 Data: (c) OpenStreetMap contributors, ODbL 1.0. The output pack is a Derivative Database and is
 offered under the ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/). This script: MIT.
 
-Usage: python3 build_pack.py south-carolina-latest.osm.pbf sc-v2.ywrp
-Format v2 (little-endian):
+Usage: python3 build_pack.py south-carolina-latest.osm.pbf sc-v3.ywrp
+Format v3 (v2 + flags2 bit1 toll) (little-endian):
   "YWRP" u32 ver=2, u32 nNodes, nEdges, nShape, nStrings, nLabels, nRestr, nExits, i32 minLat,minLon,maxLat,maxLon (1e-6 deg)
   i32 lat[nNodes], i32 lon[nNodes]
   u8  nodeCtl[nNodes] (padded to 4)   bit0 traffic_signals, bit1 stop, bit2 give_way, bit3 crossing, bit4 mini_roundabout
@@ -14,7 +14,8 @@ Format v2 (little-endian):
       flags bit0 shape reversed, bits1-4 road class (0 motorway .. 9 living_street), bit5 link, bit6 roundabout, bit7 urban
   u32 label[nEdges]                   index into label table
   u8  ctl[nEdges] (padded to 4)       interior controls: high nibble signals, low nibble stops/give_way (each capped 15)
-  u8  flags2[nEdges] (padded to 4)    bit0 maxspeed tagged (edge speed is then the posted limit)
+  u8  flags2[nEdges] (padded to 4)    bit0 maxspeed tagged (edge speed is then the posted limit), bit1 toll (v3:
+                                      way toll=yes / toll:motorcar=yes, or a barrier=toll_booth node on the edge)
   i32 shapeLat[nShape], i32 shapeLon[nShape]
   labels (12 B): u32 name, u32 ref, u32 destination   (string indices, 0 = none)
   restrictions (12 B): u32 fromEdge, u32 toEdge, u32 kind (0 = no_*, 1 = only_*)   via-node restrictions only
@@ -42,7 +43,7 @@ def parse_speed(v):
 
 class H(osmium.SimpleHandler):
     def __init__(s):
-        super().__init__(); s.ways = []; s.use = {}; s.ctl = {}; s.junc = {}; s.rel = []
+        super().__init__(); s.ways = []; s.use = {}; s.ctl = {}; s.junc = {}; s.rel = []; s.booth = set()
     def node(s, n):
         t = n.tags
         if not t: return
@@ -50,6 +51,7 @@ class H(osmium.SimpleHandler):
         if hw in CTL: s.ctl[n.id] = s.ctl.get(n.id, 0) | CTL[hw]
         if hw == "motorway_junction" and "ref" in t: s.junc[n.id] = t["ref"]
         if t.get("crossing") == "traffic_signals": s.ctl[n.id] = s.ctl.get(n.id, 0) | 8
+        if t.get("barrier") == "toll_booth": s.booth.add(n.id)
     def way(s, w):
         t = w.tags; hw = t.get("highway")
         if hw not in CLS: return
@@ -77,7 +79,9 @@ class H(osmium.SimpleHandler):
         if BBOX and not any(BBOX[0] <= a <= BBOX[2] and BBOX[1] <= b <= BBOX[3] for a, b in pts): return
         for i, r in enumerate(refs):
             s.use[r] = s.use.get(r, 0) + (2 if i in (0, len(refs)-1) else 1)
-        s.ways.append((w.id, refs, pts, oneway, sp, cls, link, rb, tagged, (name, ref, dest), (lf, lb)))
+        tv = t.get("toll:motorcar") or t.get("toll") or ""
+        toll = tv not in ("", "no") and tv != "none"
+        s.ways.append((w.id, refs, pts, oneway, sp, cls, link, rb, tagged | (2 if toll else 0), (name, ref, dest), (lf, lb)))
     def relation(s, r):
         t = r.tags
         if t.get("type") != "restriction": return
@@ -133,7 +137,7 @@ def main(src, dst):
                 ss = len(shpLat)
                 for q in seg[1:-1]: shpLat.append(q[0]); shpLon.append(q[1])
                 cnt = len(seg) - 2; dm = max(1, round(L*10)); fl = (cls << 1) | (32 if link else 0) | (64 if rb else 0)
-                f2 = 1 if tagged else 0
+                f2 = (tagged & 1) | (2 if (tagged & 2) or any(r in h.booth for r in refs[a:j+1]) else 0)
                 if oneway >= 0: adj.append([u, v, dm, ss, cnt, sp, fl, li, ctl, f2, wid, S(lf)])
                 if oneway <= 0: adj.append([v, u, dm, ss, cnt, sp, fl | 1, li, ctl, f2, wid, S(lb)])
             a = j
@@ -173,7 +177,7 @@ def main(src, dst):
     off.append(len(blob))
     pad = lambda b: bytes(b) + bytes((-len(b)) % 4)
     with open(dst, "wb") as f:
-        f.write(b"YWRP" + struct.pack("<8I4i", 2, n, len(adj), len(shpLat), len(strlist), len(labellist), len(restr), len(exits), min(lat), min(lon), max(lat), max(lon)))
+        f.write(b"YWRP" + struct.pack("<8I4i", 3, n, len(adj), len(shpLat), len(strlist), len(labellist), len(restr), len(exits), min(lat), min(lon), max(lat), max(lon)))
         f.write(lat.tobytes()); f.write(lon.tobytes()); f.write(pad(nodeCtl)); f.write(first.tobytes())
         eb = bytearray()
         for e in adj: eb += struct.pack("<IIIHBB", e[1], e[2], e[3], min(e[4], 65535), e[5], e[6])
@@ -189,6 +193,6 @@ def main(src, dst):
     urb = sum(1 for e in adj if e[6] & 128)
     print(f"nodes={n} edges={len(adj)} urban_edges={urb} shape={len(shpLat)} strings={len(strlist)} labels={len(labellist)} "
           f"restrictions={len(restr)} (relations {len(h.rel)}, unsupported via-way/multi {skipped}, unmatched {unmatched}) "
-          f"exits={len(exits)} signal_nodes={sum(1 for c in nodeCtl if c & 1)} stop_nodes={sum(1 for c in nodeCtl if c & 6)}")
+          f"exits={len(exits)} signal_nodes={sum(1 for c in nodeCtl if c & 1)} stop_nodes={sum(1 for c in nodeCtl if c & 6)} toll_edges={sum(1 for e in adj if e[9] & 2)} toll_booths={len(h.booth)}")
 
 if __name__ == "__main__": main(sys.argv[1], sys.argv[2])
