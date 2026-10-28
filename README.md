@@ -14,6 +14,12 @@ Each pack is a release asset (`<id>.ywrp.gz`); the app downloads only on request
 | `nyd-v2` | New York downstate (NYC, Long Island, Hudson Valley; south of 41.75°N) | 16.2 MB | 34.6 MB | `new-york-latest.osm.pbf`, `YWRP_BBOX=40.40,-75.00,41.75,-71.80` |
 | `nyu-v2` | Upstate New York (north of 41.75°N) | 25.8 MB | 50.9 MB | `new-york-latest.osm.pbf`, `YWRP_BBOX=41.75,-79.90,45.10,-73.20` |
 | `nj-v2` | New Jersey | 20.2 MB | 43.4 MB | `new-jersey-latest.osm.pbf` |
+| `paw-v2` | Western Pennsylvania (west of 77.6°W) | 20.8 MB | 41.4 MB | `pennsylvania-latest.osm.pbf`, `YWRP_BBOX=39.60,-80.60,42.40,-77.60` |
+| `pae-v2` | Eastern Pennsylvania (east of 77.6°W) | 28.7 MB | 58.6 MB | `pennsylvania-latest.osm.pbf`, `YWRP_BBOX=39.60,-77.60,42.40,-74.60` |
+| `oh-v2` | Ohio | 41.7 MB | 86.7 MB | `ohio-latest.osm.pbf` |
+| `wv-v2` | West Virginia | 15.3 MB | 30.0 MB | `west-virginia-latest.osm.pbf` |
+| `md-v2` | Maryland | 18.0 MB | 37.5 MB | `maryland-latest.osm.pbf` |
+| `de-v2` | Delaware | 3.4 MB | 7.6 MB | `delaware-latest.osm.pbf` |
 
 `sc-v1` (format v1) is superseded by `sc-v2`.
 
