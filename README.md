@@ -38,3 +38,11 @@ Data © OpenStreetMap contributors, ODbL 1.0. See LICENSE.
 YWRP format 3 adds a per-edge toll flag (OSM `toll=yes`, `barrier=toll_booth`) used by the app's Avoid tolls option. Releases `<id>-v3` for sc nc ga ct ri ma nyd nyu nj paw pae oh wv md de. SHA-256 (decompressed) in SHA256SUMS. v2 packs still work without toll data.
 
 Data © OpenStreetMap contributors, ODbL 1.0.
+
+## Midwest v3 packs (2026-10-28)
+Releases `mis-v3` (Michigan south of 43.1°N), `min-v3` (northern Lower Peninsula + UP), `in-v3`, `ilc-v3` (Illinois north of 41.0°N incl. Chicago), `ils-v3` (Illinois south of 41.0°N), `wi-v3`. Built from Geofabrik extracts of 2026-10-28; toll flags included. MI and IL are split to keep downloads ~12–29 MB each. SHA-256 (decompressed) in SHA256SUMS.
+
+## Cameras
+`cams-v2` (`cams-us-v2.json.gz`): 587 fixed speed/red-light cameras from OSM (adds IL, IN, WI; MI has none in OSM). Informational, may be incomplete. City of Chicago portal data is not included.
+
+Data © OpenStreetMap contributors, ODbL 1.0.
