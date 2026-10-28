@@ -1,10 +1,19 @@
 # yw-route-packs
 
-Compact OpenStreetMap driving-graph packs (formats YWRP v1/v2; the current format is documented in `build_pack.py`).
+Compact OpenStreetMap driving-graph packs for the Your World Travel app (format YWRP v2, documented in `build_pack.py`).
+Each pack is a release asset (`<id>.ywrp.gz`); the app downloads only on request and checks the SHA-256 of the unpacked file.
 
-- `sc-v1`: South Carolina. Built from Geofabrik `south-carolina-latest.osm.pbf` (2026-10-28) with
-  `pip install osmium && python3 build_pack.py south-carolina-latest.osm.pbf sc-v1.ywrp && gzip -9 sc-v1.ywrp`.
-- `sc-v2`: South Carolina, YWRP v2 (turn restrictions, signals/stops, urban flags, name/ref/destination labels, exit refs, turn:lanes, posted-limit flag). Same Geofabrik extract (2026-10-28);
-  `python3 build_pack.py south-carolina-latest.osm.pbf sc-v2.ywrp && gzip -9 sc-v2.ywrp`.
+| Pack | Region | Download (gz) | Unpacked | Source extract (Geofabrik, 2026-10-28) |
+|---|---|---|---|---|
+| `sc-v2` | South Carolina | 27.9 MB | 57.0 MB | `south-carolina-latest.osm.pbf` |
+| `nc-v2` | North Carolina | 54.2 MB | 110.5 MB | `north-carolina-latest.osm.pbf` |
+| `ga-v2` | Georgia | 44.2 MB | 91.4 MB | `georgia-latest.osm.pbf` |
+
+`sc-v1` (format v1) is superseded by `sc-v2`.
+
+Build: `pip install osmium && python3 build_pack.py <state>-latest.osm.pbf <id>.ywrp && gzip -9 -k <id>.ywrp`.
+
+Cross-state routes: the app loads neighbouring packs together and joins them on the OSM nodes they share along the
+border (Geofabrik extracts keep border-crossing ways whole). Checksums in `SHA256SUMS`.
 
 Data © OpenStreetMap contributors, ODbL 1.0. See LICENSE.
